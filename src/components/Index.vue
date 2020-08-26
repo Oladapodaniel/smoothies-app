@@ -9,6 +9,11 @@
                         <span class="chip">{{ ing }}</span>
                     </li>
                 </ul>
+                <span class="btn-floating halfway-fab pink">
+                    <router-link :to="{ name: 'EditSmoothie', params: { slug: smoothie.slug } }">
+                        <i class="material-icons">edit</i>
+                    </router-link>
+                </span>
             </div>
         </div>
     </div>

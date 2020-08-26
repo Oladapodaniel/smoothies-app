@@ -1,20 +1,20 @@
 <template>
-    <div class="add-smoothie container">
+    <div v-if="smoothie" class="edit-smoothie container">
         <div class="card">
             <div class="card-content">
             <div class="card-title">
-                <h2 class="center-align indigo-text">Add Smoothie</h2>
+                <h2 class="center-align indigo-text">Edit {{ smoothie.title }}</h2>
             </div>
             <div class="card-action">
-            <form @submit.prevent="submit">
+            <form @submit.prevent="update">
             <div class="field title">
                 <label for="title">Smoothie Title:</label>
-                <input type="text" name="title" id="title" v-model="title">
+                <input type="text" name="title" id="title" v-model="smoothie.title">
             </div>
-            <div v-for="(ing, index) in ingredients" :key="index">
+            <div v-for="(ing, index) in smoothie.ingredients" :key="index">
                 <div class="field">
                 <label for="ing">Smoothie Title:</label>
-                <input type="text" name="ing" id="ing" v-model="ingredients[index]">
+                <input type="text" name="ing" id="ing" v-model="smoothie.ingredients[index]">
                 <i class="material-icons secondary-content delete" @click="deleteIng(ing)">delete</i>
             </div>
             </div>
@@ -24,57 +24,46 @@
                 <div v-if="feedback" class="red-text">Please enter Your Ingredient</div>
             </div>
             <div class="field center-align">
-                <button class="btn pink">Add Smoothie</button>
+                <button class="btn pink">Update Smoothie</button>
             </div>
         </form>
             </div>
             </div>
           
-        </div>
-        
-        
+        </div>  
     </div>
+
 </template>
 
 <script>
 import database from '@/firebase/init'
 import slugify from 'slugify'
 export default {
-    name: 'AddSmoothie',
+    name: 'EditSmoothie',
     data () {
         return {
-            title: null,
+            editSmoothie: this.$route.params.slug,
+            smoothie: null,
             another: null,
-            feedback: null,
-            ingredients: [],
-            slug: null
+            feedback: null
         }
     },
     methods: {
-        addIng () {
-            if (this.another) {
-                this.ingredients.push(this.another)
-                this.another = null
-                this.feedback = null
-                console.log(this.ingredients)
-            }  
-            
-        },
-        submit () {
-            if (this.title) {
+        update () {
+            if (this.smoothie.title) {
                 // create a slug
-                this.slug = slugify(this.title, {
+                this.smoothie.slug = slugify(this.smoothie.title, {
                 replacement: '-',
                 remove: /[$*_~.()'"!\-:@]/g,
                 lower: true
             })
             // clear the input  
-           this.title = null
-             // Add to database
-            database.collection('smoothies').add({
-                title: this.title,
-                ingredients: this.ingredients,
-                slug: this.slug
+        //    this.smoothie.title = null
+             // update to database
+            database.collection('smoothies').doc(this.smoothie.id).update({
+                title: this.smoothie.title,
+                ingredients: this.smoothie.ingredients,
+                slug: this.smoothie.slug
             }).then(() => {
                 this.$router.push({ name: 'Index' })
             }).catch(err => console.log(err))
@@ -82,36 +71,52 @@ export default {
            } else {
                this.feedback = 'Please Enter Your title'
            }
-          
         },
-        deleteIng (ing) {
-            this.ingredients = this.ingredients.filter(ingredient => {
+        addIng () {
+            if (this.another) {
+                this.smoothie.ingredients.push(this.another)
+                this.another = null
+                this.feedback = null
+            }  
+            
+        },
+         deleteIng (ing) {
+            this.smoothie.ingredients = this.smoothie.ingredients.filter(ingredient => {
                 // when ingredient is not equal to ing, then this return statement is true, then filter the true one out
                 return ingredient != ing
                 })
         }
+    },
+    created () {
+        let ref = database.collection('smoothies').where('slug', '==', this.$route.params.slug)
+        ref.get().then(snapshot => {
+            snapshot.forEach(doc => {
+                this.smoothie = doc.data()
+                this.smoothie.id = doc.id
+            })
+        })
     }
 }
 </script>
 
 <style scoped>
-    .add-smoothie {
+     .edit-smoothie {
         margin-top: 60px;
         padding: 20px;
         max-width: 500px;
     }
 
-    .add-smoothie h2 {
+    .edit-smoothie h2 {
         font-size: 2em;
         margin: 20px auto;
     }
 
-    .add-smoothie .field {
+    .edit-smoothie .field {
         position: relative;
         margin: 20px auto;
     }
 
-    .add-smoothie .delete {
+    .edit-smoothie .delete {
         position: absolute;
         right: 0;
         bottom: 16px;
